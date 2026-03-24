@@ -1,0 +1,21 @@
+{
+  "name": "ccm",
+  "displayName": "Claude Conversation Manager",
+  "description": "View and manage Claude Code conversations as interactive trees",
+  "version": "0.1.0",
+  "publisher": "cherryfunk",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Visualization"],
+  "activationEvents": ["onWebviewPanel:ccm"],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ccm.open",
+        "title": "CCM: Open Conversation Manager"
+      }
+    ]
+  }
+}

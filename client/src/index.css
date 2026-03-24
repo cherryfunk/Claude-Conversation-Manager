@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--canvas-bg, #0f0f14);
+  color: var(--text-secondary, rgba(255,255,255,0.8));
+}
+
+/* Ensure React Flow fills its container */
+.react-flow {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* React Flow controls - use global glass tokens */
+.react-flow__controls {
+  background: var(--glass-panel-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  fill: var(--text-secondary) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--glass-button-bg) !important;
+}
+
+/* Minimap - use global glass tokens */
+.react-flow__minimap {
+  background: var(--glass-panel-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__edge-path {
+  stroke: rgba(168,85,247,0.4) !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
