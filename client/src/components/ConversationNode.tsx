@@ -22,7 +22,6 @@ function ConversationBarNode({ data, selected }: NodeProps) {
     ? format(new Date(lastTimestamp), 'MMM d HH:mm')
     : ''
 
-  const isNarrow = barWidth < 120
   const accent = isFork ? theme.node.accentPurple : theme.node.accentBlue
 
   return (
@@ -33,7 +32,7 @@ function ConversationBarNode({ data, selected }: NodeProps) {
           : `rgba(${accent},${theme.node.fillOpacity})`,
         border: `1px solid ${selected ? `rgba(${accent},${theme.node.selectedBorderOpacity})` : `rgba(${accent},${theme.node.borderOpacity})`}`,
         borderRadius: 8,
-        padding: '6px 10px',
+        padding: '8px 12px',
         width: '100%',
         height: '100%',
         boxSizing: 'border-box',
@@ -65,29 +64,31 @@ function ConversationBarNode({ data, selected }: NodeProps) {
       <div
         style={{
           fontWeight: 600,
-          fontSize: isNarrow ? 10 : 11,
-          color: theme.text.secondary,
+          fontSize: 13,
+          color: theme.text.primary,
           textShadow: theme.text.shadowLight,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          lineHeight: '1.3',
         }}
       >
         {title}
       </div>
 
-      {!isNarrow && (
+      {barWidth >= 200 && (
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-end',
-            fontSize: 9,
+            fontSize: 10,
             color: theme.text.dimmed,
+            gap: 8,
           }}
         >
           <span>{startStr}</span>
-          <span style={{ color: theme.text.dimmed }}>
+          <span style={{ color: theme.text.muted }}>
             {messageCount} msgs / {formatSize(fileSize)}
           </span>
           <span>{endStr}</span>

@@ -19,6 +19,13 @@ interface TreeResult {
   edges: Edge[]
 }
 
+const MS_PER_DAY = 86_400_000
+const PX_PER_DAY = 300
+const MIN_BAR_WIDTH = PX_PER_DAY  // 1 day minimum
+const X_PADDING = 40
+const LANE_HEIGHT = 120
+const BAR_HEIGHT = 60
+
 export function buildConversationTree(conversations: Conversation[]): TreeResult {
   if (!conversations || conversations.length === 0) return { nodes: [], edges: [] }
 
@@ -35,18 +42,11 @@ export function buildConversationTree(conversations: Conversation[]): TreeResult
     ])
     .filter((t) => t > 0)
   const minTime = Math.min(...allTimes)
-  const maxTime = Math.max(...allTimes)
-  const timeRange = maxTime - minTime || 1
-
-  const CANVAS_WIDTH = 2400
-  const X_PADDING = 40
-  const LANE_HEIGHT = 100
-  const BAR_HEIGHT = 50
-  const MIN_BAR_WIDTH = 60
 
   function timeToX(ts: string): number {
     const t = new Date(ts).getTime()
-    return X_PADDING + ((t - minTime) / timeRange) * (CANVAS_WIDTH - X_PADDING * 2)
+    const days = (t - minTime) / MS_PER_DAY
+    return X_PADDING + days * PX_PER_DAY
   }
 
   const forkMap = new Map<string, string>()
