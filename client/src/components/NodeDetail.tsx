@@ -27,28 +27,27 @@ export default function NodeDetail({ conversation, onClose }: NodeDetailProps) {
     <div
       style={{
         position: 'absolute',
-        top: 0,
-        right: 0,
-        width: 340,
-        height: '100%',
+        top: 16,
+        right: 16,
+        width: 280,
         ...panelStyle(),
-        borderTop: 'none',
-        borderBottom: 'none',
-        borderRight: 'none',
-        overflow: 'auto',
+        borderRadius: 12,
+        overflow: 'hidden',
         zIndex: 10,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
       }}
     >
       <div
         style={{
-          padding: '12px 16px',
+          padding: '10px 14px',
           borderBottom: `1px solid ${theme.glass.borderColor}`,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
+          gap: 8,
         }}
       >
-        <div style={{ fontWeight: 700, fontSize: 14, color: theme.text.primary, textShadow: theme.text.shadow, flex: 1 }}>
+        <div style={{ fontWeight: 700, fontSize: 13, color: theme.text.primary, textShadow: theme.text.shadow, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {conversation.title}
         </div>
         <button
@@ -56,48 +55,27 @@ export default function NodeDetail({ conversation, onClose }: NodeDetailProps) {
           style={{
             ...buttonStyle(),
             borderRadius: 4,
-            fontSize: 14,
+            fontSize: 12,
             cursor: 'pointer',
-            marginLeft: 8,
-            padding: '2px 8px',
+            padding: '1px 6px',
+            flexShrink: 0,
           }}
         >
           x
         </button>
       </div>
-      <div style={{ padding: '16px' }}>
-        <div style={{ marginBottom: 16 }}>
-          <InfoRow label="Session ID" value={conversation.sessionId} mono />
-          <InfoRow label="Started" value={startDate} />
-          <InfoRow label="Last active" value={endDate} />
-          <InfoRow label="Messages" value={String(conversation.messageCount)} />
-          <InfoRow label="File size" value={formatSize(conversation.fileSize)} />
-        </div>
-        {conversation.isFork && conversation.forkedFrom && (
-          <div
-            style={{
-              background: `rgba(${theme.node.accentPurple},0.1)`,
-              border: `1px solid rgba(${theme.node.accentPurple},0.2)`,
-              borderRadius: 8,
-              padding: '10px 12px',
-              marginTop: 12,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: `rgba(${theme.node.accentPurple},0.8)`,
-                textTransform: 'uppercase',
-                marginBottom: 6,
-              }}
-            >
-              Branched from
-            </div>
-            <div style={{ fontSize: 11, color: `rgba(${theme.node.accentPurple},0.6)` }}>
-              {conversation.forkedFrom.title ?? conversation.forkedFrom.sessionId}
-            </div>
-          </div>
+      <div style={{ padding: '8px 14px 6px' }}>
+        <InfoRow label="Session ID" value={conversation.sessionId} mono />
+        {startDate && <InfoRow label="Started" value={startDate} />}
+        {endDate && <InfoRow label="Last active" value={endDate} />}
+        <InfoRow label="Messages" value={String(conversation.messageCount)} />
+        {conversation.isFork && conversation.forkedFrom ? (
+          <>
+            <InfoRow label="File size" value={formatSize(conversation.fileSize)} />
+            <InfoRow label="Branched from" value={conversation.forkedFrom.title ?? conversation.forkedFrom.sessionId} last />
+          </>
+        ) : (
+          <InfoRow label="File size" value={formatSize(conversation.fileSize)} last />
         )}
       </div>
     </div>
@@ -110,15 +88,15 @@ interface InfoRowProps {
   mono?: boolean
 }
 
-function InfoRow({ label, value, mono }: InfoRowProps) {
+function InfoRow({ label, value, mono, last }: InfoRowProps & { last?: boolean }) {
   return (
     <div
       style={{
         display: 'flex',
         justifyContent: 'space-between',
-        padding: '4px 0',
-        fontSize: 12,
-        borderBottom: `1px solid ${theme.glass.borderColor}`,
+        padding: '3px 0',
+        fontSize: 11,
+        borderBottom: last ? 'none' : `1px solid ${theme.glass.borderColor}`,
       }}
     >
       <span style={{ color: theme.text.muted, textShadow: theme.text.shadowLight }}>{label}</span>
@@ -127,8 +105,8 @@ function InfoRow({ label, value, mono }: InfoRowProps) {
           color: theme.text.secondary,
           textShadow: theme.text.shadowLight,
           fontFamily: mono ? 'monospace' : 'inherit',
-          fontSize: mono ? 10 : 12,
-          maxWidth: 180,
+          fontSize: mono ? 9 : 11,
+          maxWidth: 160,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
         }}

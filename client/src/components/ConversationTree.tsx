@@ -1,9 +1,11 @@
-import { useMemo, useCallback, useRef, type CSSProperties } from 'react'
+import { useMemo, useEffect, useCallback, type CSSProperties } from 'react'
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
+  useNodesState,
+  useEdgesState,
 } from '@xyflow/react'
 import type { Node } from '@xyflow/react'
 import { buildConversationTree, type ConversationNodeData } from '../lib/buildTree'
@@ -26,25 +28,21 @@ export default function ConversationTree({
   onNodeSelect,
   selectedSessionId: _selectedSessionId,
 }: ConversationTreeProps) {
-  const { nodes, edges } = useMemo(() => {
+  const { layoutNodes, layoutEdges } = useMemo(() => {
     if (!conversations || conversations.length === 0) {
-      return { nodes: [], edges: [] }
+      return { layoutNodes: [], layoutEdges: [] }
     }
-    return buildConversationTree(conversations)
+    const { nodes, edges } = buildConversationTree(conversations)
+    return { layoutNodes: nodes, layoutEdges: edges }
   }, [conversations])
 
-  // Fingerprint of conversation data to force ReactFlow remount when content changes
-  // (ReactFlow's internal store doesn't reliably re-render nodes with same IDs but new data)
-  const revisionRef = useRef(0)
-  const prevFingerprintRef = useRef('')
-  const fingerprint = useMemo(
-    () => conversations.map(c => `${c.sessionId}:${c.title}:${c.messageCount}`).join('|'),
-    [conversations],
-  )
-  if (fingerprint !== prevFingerprintRef.current) {
-    prevFingerprintRef.current = fingerprint
-    revisionRef.current++
-  }
+  const [nodes, setNodes, onNodesChange] = useNodesState(layoutNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutEdges)
+
+  useEffect(() => {
+    setNodes(layoutNodes)
+    setEdges(layoutEdges)
+  }, [layoutNodes, layoutEdges, setNodes, setEdges])
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -80,9 +78,10 @@ export default function ConversationTree({
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
       <ReactFlow
-        key={revisionRef.current}
         nodes={nodes}
         edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         nodesDraggable={false}
