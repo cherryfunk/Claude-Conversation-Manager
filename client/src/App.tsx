@@ -3,7 +3,7 @@ import { useConversations } from './hooks/useProjects'
 import Sidebar from './components/Sidebar'
 import ConversationTree from './components/ConversationTree'
 import NodeDetail from './components/NodeDetail'
-import theme, { buttonStyle } from './lib/theme'
+import theme from './lib/theme'
 import type { ConversationNodeData } from './lib/buildTree'
 
 export default function App() {
@@ -31,33 +31,15 @@ export default function App() {
         loading={loading}
         onNodeSelect={handleNodeSelect}
         selectedSessionId={selectedConv?.sessionId}
+        sidebarWidth={sidebarOpen ? 240 : 0}
       />
 
-      {sidebarOpen && (
-        <Sidebar
-          onSelectProject={handleSelectProject}
-          activeProjectId={selectedProject}
-          onCollapse={() => setSidebarOpen(false)}
-        />
-      )}
-      {!sidebarOpen && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          style={{
-            position: 'absolute',
-            top: 10,
-            left: 10,
-            zIndex: 20,
-            ...buttonStyle(),
-            borderRadius: 6,
-            cursor: 'pointer',
-            padding: '6px 10px',
-            fontSize: 13,
-          }}
-        >
-          Projects
-        </button>
-      )}
+      <Sidebar
+        onSelectProject={handleSelectProject}
+        activeProjectId={selectedProject}
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
 
       {selectedConv && (
         <NodeDetail
@@ -65,7 +47,6 @@ export default function App() {
           onClose={() => setSelectedConv(null)}
         />
       )}
-
     </div>
   )
 }

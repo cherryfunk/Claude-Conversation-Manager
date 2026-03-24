@@ -45,8 +45,8 @@ export interface Theme {
 
 const theme: Theme = {
   glass: {
-    blur: 4,
-    panelBg: 'rgba(15,15,20,0.3)',
+    blur: 6,
+    panelBg: 'rgba(15,15,20,0.4)',
     buttonBg: 'rgba(255,255,255,0.06)',
     borderColor: 'rgba(255,255,255,0.08)',
   },

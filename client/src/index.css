@@ -11,13 +11,12 @@ html, body, #root {
   color: var(--text-secondary, rgba(255,255,255,0.8));
 }
 
-/* Ensure React Flow fills its container */
 .react-flow {
   width: 100% !important;
   height: 100% !important;
 }
 
-/* React Flow controls - use global glass tokens */
+/* React Flow controls */
 .react-flow__controls {
   background: var(--glass-panel-bg) !important;
   backdrop-filter: var(--glass-blur) !important;
@@ -25,6 +24,12 @@ html, body, #root {
   border: 1px solid var(--glass-border) !important;
   border-radius: 8px !important;
   overflow: hidden;
+  position: absolute !important;
+  left: var(--controls-left, 12px) !important;
+  bottom: 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transition: left 0.25s ease !important;
 }
 
 .react-flow__controls-button {
@@ -37,13 +42,79 @@ html, body, #root {
   background: var(--glass-button-bg) !important;
 }
 
-/* Minimap - use global glass tokens */
+/* Minimap - match panel style */
 .react-flow__minimap {
   background: var(--glass-panel-bg) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  -webkit-backdrop-filter: var(--glass-blur) !important;
   border: 1px solid var(--glass-border) !important;
   border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
+.react-flow__minimap svg {
+  background: transparent !important;
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(0,0,0,0.4) !important;
+  stroke: none !important;
+}
+
+.react-flow__minimap-node {
+  stroke: none !important;
+}
+
+/* Minimap hover mode */
+.minimap-hover .react-flow__minimap {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.minimap-hover:hover .react-flow__minimap {
+  opacity: 1 !important;
+}
+
+/* Toolbar buttons */
+.ccm-toolbar-group {
+  display: flex;
+  align-items: center;
+  background: var(--glass-panel-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ccm-toolbar-btn {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 7px;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.ccm-toolbar-btn:hover {
+  background: var(--glass-button-bg);
+}
+
+/* Hover expand: collapsed shown by default, expanded on hover */
+.ccm-toolbar-hover .ccm-toolbar-expanded {
+  display: none;
+}
+.ccm-toolbar-hover .ccm-toolbar-collapsed {
+  display: block;
+}
+.ccm-toolbar-hover:hover .ccm-toolbar-expanded {
+  display: block;
+}
+.ccm-toolbar-hover:hover .ccm-toolbar-collapsed {
+  display: none;
 }
 
 .react-flow__edge-path {
