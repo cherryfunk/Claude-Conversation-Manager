@@ -80,6 +80,7 @@ export function onRefresh(callback: () => void): () => void {
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
   } else {
+    // SSE for dev mode
     const source = new EventSource('/api/events')
     source.onmessage = (event) => {
       if (event.data === 'refresh') callback()
