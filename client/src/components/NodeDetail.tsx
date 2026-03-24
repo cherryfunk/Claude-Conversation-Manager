@@ -1,13 +1,19 @@
-import { formatDistanceToNow, format } from 'date-fns'
-import theme, { panelStyle, buttonStyle } from '../lib/theme.js'
+import { format } from 'date-fns'
+import theme, { panelStyle, buttonStyle } from '../lib/theme'
+import type { ConversationNodeData } from '../lib/buildTree'
 
-function formatSize(bytes) {
+function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes}B`
   if (bytes < 1048576) return `${Math.round(bytes / 1024)}K`
   return `${(bytes / 1048576).toFixed(1)}M`
 }
 
-export default function NodeDetail({ conversation, onClose }) {
+interface NodeDetailProps {
+  conversation: ConversationNodeData
+  onClose: () => void
+}
+
+export default function NodeDetail({ conversation, onClose }: NodeDetailProps) {
   if (!conversation) return null
 
   const startDate = conversation.firstTimestamp
@@ -64,7 +70,7 @@ export default function NodeDetail({ conversation, onClose }) {
           <InfoRow label="Session ID" value={conversation.sessionId} mono />
           <InfoRow label="Started" value={startDate} />
           <InfoRow label="Last active" value={endDate} />
-          <InfoRow label="Messages" value={conversation.messageCount} />
+          <InfoRow label="Messages" value={String(conversation.messageCount)} />
           <InfoRow label="File size" value={formatSize(conversation.fileSize)} />
         </div>
         {conversation.isFork && conversation.forkedFrom && (
@@ -89,7 +95,7 @@ export default function NodeDetail({ conversation, onClose }) {
               Branched from
             </div>
             <div style={{ fontSize: 11, color: `rgba(${theme.node.accentPurple},0.6)` }}>
-              {conversation.forkedFrom.title || conversation.forkedFrom.sessionId}
+              {conversation.forkedFrom.title ?? conversation.forkedFrom.sessionId}
             </div>
           </div>
         )}
@@ -98,7 +104,13 @@ export default function NodeDetail({ conversation, onClose }) {
   )
 }
 
-function InfoRow({ label, value, mono }) {
+interface InfoRowProps {
+  label: string
+  value: string
+  mono?: boolean
+}
+
+function InfoRow({ label, value, mono }: InfoRowProps) {
   return (
     <div
       style={{

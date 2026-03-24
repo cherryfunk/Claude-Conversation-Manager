@@ -9,7 +9,7 @@
   },
   "categories": ["Visualization"],
   "activationEvents": ["onWebviewPanel:ccm"],
-  "main": "./src/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -17,5 +17,17 @@
         "title": "CCM: Open Conversation Manager"
       }
     ]
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc -b --watch"
+  },
+  "dependencies": {
+    "@ccm/shared": "file:../shared"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
   }
 }

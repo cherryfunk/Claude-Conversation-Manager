@@ -1,17 +1,56 @@
-// Global design tokens - SINGLE source of truth for all visual parameters
-// These values are injected as CSS variables on :root (see injectThemeVars)
-// and used by all components via the theme object.
+import type { CSSProperties } from 'react'
 
-const theme = {
-  // Glass effect (applies to ALL panels, buttons, controls, nodes)
+interface GlassTokens {
+  blur: number
+  panelBg: string
+  buttonBg: string
+  borderColor: string
+}
+
+interface NodeTokens {
+  accentBlue: string
+  accentPurple: string
+  accentIndigo: string
+  fillOpacity: number
+  borderOpacity: number
+  selectedFillOpacity: number
+  selectedBorderOpacity: number
+}
+
+interface TextTokens {
+  primary: string
+  secondary: string
+  muted: string
+  dimmed: string
+  shadow: string
+  shadowLight: string
+}
+
+interface CanvasTokens {
+  background: string
+  gridColor: string
+}
+
+interface MinimapTokens {
+  maskColor: string
+}
+
+export interface Theme {
+  glass: GlassTokens
+  node: NodeTokens
+  text: TextTokens
+  canvas: CanvasTokens
+  minimap: MinimapTokens
+}
+
+const theme: Theme = {
   glass: {
-    blur: 4,                              // px - backdrop blur
-    panelBg: 'rgba(15,15,20,0.3)',        // panel/sidebar background
-    buttonBg: 'rgba(255,255,255,0.06)',   // button background
-    borderColor: 'rgba(255,255,255,0.08)', // shared border color
+    blur: 4,
+    panelBg: 'rgba(15,15,20,0.3)',
+    buttonBg: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
 
-  // Conversation node bars
   node: {
     accentBlue: '59,130,246',
     accentPurple: '168,85,247',
@@ -22,7 +61,6 @@ const theme = {
     selectedBorderOpacity: 0.7,
   },
 
-  // Text
   text: {
     primary: '#fff',
     secondary: 'rgba(255,255,255,0.8)',
@@ -32,28 +70,24 @@ const theme = {
     shadowLight: '0 1px 2px rgba(0,0,0,0.3)',
   },
 
-  // Canvas
   canvas: {
     background: '#0f0f14',
     gridColor: 'rgba(255,255,255,0.03)',
   },
 
-  // Minimap
   minimap: {
     maskColor: 'rgba(0,0,0,0.6)',
   },
 }
 
-// Helper: backdrop-filter style object
-export function glassBlur() {
+export function glassBlur(): CSSProperties {
   return {
     backdropFilter: `blur(${theme.glass.blur}px)`,
     WebkitBackdropFilter: `blur(${theme.glass.blur}px)`,
   }
 }
 
-// Helper: full panel glass style
-export function panelStyle() {
+export function panelStyle(): CSSProperties {
   return {
     background: theme.glass.panelBg,
     ...glassBlur(),
@@ -61,8 +95,7 @@ export function panelStyle() {
   }
 }
 
-// Helper: button glass style
-export function buttonStyle() {
+export function buttonStyle(): CSSProperties {
   return {
     background: theme.glass.buttonBg,
     ...glassBlur(),
@@ -71,9 +104,7 @@ export function buttonStyle() {
   }
 }
 
-// Inject CSS variables onto :root so CSS (index.css) uses the same values.
-// Call this once at app startup.
-export function injectThemeVars() {
+export function injectThemeVars(): void {
   const root = document.documentElement
   root.style.setProperty('--glass-blur', `blur(${theme.glass.blur}px)`)
   root.style.setProperty('--glass-panel-bg', theme.glass.panelBg)

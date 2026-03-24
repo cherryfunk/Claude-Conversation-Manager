@@ -1,25 +1,26 @@
 import { useState, useCallback } from 'react'
-import { useConversations } from './hooks/useProjects.js'
-import Sidebar from './components/Sidebar.jsx'
-import ConversationTree from './components/ConversationTree.jsx'
-import NodeDetail from './components/NodeDetail.jsx'
-import theme, { buttonStyle } from './lib/theme.js'
+import { useConversations } from './hooks/useProjects'
+import Sidebar from './components/Sidebar'
+import ConversationTree from './components/ConversationTree'
+import NodeDetail from './components/NodeDetail'
+import theme, { buttonStyle } from './lib/theme'
+import type { ConversationNodeData } from './lib/buildTree'
 
 export default function App() {
-  const [selectedProject, setSelectedProject] = useState(
-    () => localStorage.getItem('ccm-last-project') || null
+  const [selectedProject, setSelectedProject] = useState<string | null>(
+    () => localStorage.getItem('ccm-last-project'),
   )
-  const [selectedConv, setSelectedConv] = useState(null)
+  const [selectedConv, setSelectedConv] = useState<ConversationNodeData | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { conversations, loading } = useConversations(selectedProject)
 
-  const handleSelectProject = useCallback((projectId) => {
+  const handleSelectProject = useCallback((projectId: string) => {
     setSelectedProject(projectId)
     setSelectedConv(null)
-    try { localStorage.setItem('ccm-last-project', projectId) } catch {}
+    try { localStorage.setItem('ccm-last-project', projectId) } catch { /* webview may block */ }
   }, [])
 
-  const handleNodeSelect = useCallback((nodeData) => {
+  const handleNodeSelect = useCallback((nodeData: ConversationNodeData) => {
     setSelectedConv(nodeData)
   }, [])
 

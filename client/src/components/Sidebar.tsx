@@ -1,7 +1,13 @@
-import { useProjects } from '../hooks/useProjects.js'
-import theme, { panelStyle, buttonStyle } from '../lib/theme.js'
+import { useProjects } from '../hooks/useProjects'
+import theme, { panelStyle, buttonStyle } from '../lib/theme'
 
-export default function Sidebar({ onSelectProject, activeProjectId, onCollapse }) {
+interface SidebarProps {
+  onSelectProject: (projectId: string) => void
+  activeProjectId: string | null
+  onCollapse: () => void
+}
+
+export default function Sidebar({ onSelectProject, activeProjectId, onCollapse }: SidebarProps) {
   const { projects, loading } = useProjects()
 
   return (

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, type CSSProperties } from 'react'
 import {
   ReactFlow,
   Background,
@@ -7,18 +7,27 @@ import {
   useNodesState,
   useEdgesState,
 } from '@xyflow/react'
-import { buildConversationTree } from '../lib/buildTree.js'
-import ConversationNode from './ConversationNode.jsx'
-import theme from '../lib/theme.js'
+import type { Node } from '@xyflow/react'
+import { buildConversationTree, type ConversationNodeData } from '../lib/buildTree'
+import ConversationNode from './ConversationNode'
+import theme from '../lib/theme'
+import type { Conversation } from '@ccm/shared'
 
 const nodeTypes = { conversationBar: ConversationNode }
+
+interface ConversationTreeProps {
+  conversations: Conversation[]
+  loading: boolean
+  onNodeSelect: (nodeData: ConversationNodeData) => void
+  selectedSessionId?: string
+}
 
 export default function ConversationTree({
   conversations,
   loading,
   onNodeSelect,
-  selectedSessionId,
-}) {
+  selectedSessionId: _selectedSessionId,
+}: ConversationTreeProps) {
   const { layoutNodes, layoutEdges } = useMemo(() => {
     if (!conversations || conversations.length === 0) {
       return { layoutNodes: [], layoutEdges: [] }
@@ -36,10 +45,10 @@ export default function ConversationTree({
   }, [layoutNodes, layoutEdges, setNodes, setEdges])
 
   const onNodeClick = useCallback(
-    (_event, node) => {
-      onNodeSelect(node.data)
+    (_event: React.MouseEvent, node: Node) => {
+      onNodeSelect(node.data as unknown as ConversationNodeData)
     },
-    [onNodeSelect]
+    [onNodeSelect],
   )
 
   if (!conversations || conversations.length === 0) {
@@ -58,6 +67,12 @@ export default function ConversationTree({
         {loading ? 'Loading...' : 'Select a project from the sidebar'}
       </div>
     )
+  }
+
+  const minimapStyle: CSSProperties = {
+    background: theme.glass.panelBg,
+    borderRadius: 8,
+    border: `1px solid ${theme.glass.borderColor}`,
   }
 
   return (
@@ -80,16 +95,12 @@ export default function ConversationTree({
         <Background color={theme.canvas.gridColor} gap={20} />
         <Controls />
         <MiniMap
-          nodeColor={(node) =>
+          nodeColor={(node: Node) =>
             node.data?.isFork
               ? `rgba(${theme.node.accentPurple},0.6)`
               : `rgba(${theme.node.accentBlue},0.6)`
           }
-          style={{
-            background: theme.minimap.background,
-            borderRadius: 8,
-            border: `1px solid ${theme.minimap.borderColor}`,
-          }}
+          style={minimapStyle}
           maskColor={theme.minimap.maskColor}
         />
       </ReactFlow>

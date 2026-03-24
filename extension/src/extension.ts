@@ -1,21 +1,20 @@
-const vscode = require('vscode')
-const path = require('path')
-const { listProjects, listConversations, getConversation } = require('./parser')
+import * as vscode from 'vscode'
+import * as path from 'path'
+import * as os from 'os'
+import { listProjects, listConversations, getConversation } from '@ccm/shared'
+import type { WebviewRequest } from '@ccm/shared'
 
-let currentPanel = undefined
+let currentPanel: vscode.WebviewPanel | undefined
 
-function setupPanel(panel, context) {
+function setupPanel(panel: vscode.WebviewPanel, context: vscode.ExtensionContext): void {
   currentPanel = panel
 
-  panel.webview.html = getWebviewContent(
-    panel.webview,
-    context.extensionUri
-  )
+  panel.webview.html = getWebviewContent(panel.webview, context.extensionUri)
 
   panel.webview.onDidReceiveMessage(
-    async (msg) => {
+    async (msg: WebviewRequest) => {
       try {
-        let result
+        let result: unknown
         switch (msg.type) {
           case 'getProjects':
             result = await listProjects()
@@ -32,26 +31,41 @@ function setupPanel(panel, context) {
         panel.webview.postMessage({
           type: msg.type + ':response',
           requestId: msg.requestId,
-          data: result
+          data: result,
         })
       } catch (err) {
         panel.webview.postMessage({
           type: msg.type + ':response',
           requestId: msg.requestId,
-          error: err.message
+          error: err instanceof Error ? err.message : String(err),
         })
       }
     },
     undefined,
-    context.subscriptions
+    context.subscriptions,
   )
+
+  // File watcher: auto-reload when conversation files change
+  const claudeProjectsDir = path.join(os.homedir(), '.claude', 'projects')
+  const watcher = vscode.workspace.createFileSystemWatcher(
+    new vscode.RelativePattern(vscode.Uri.file(claudeProjectsDir), '**/*.jsonl'),
+  )
+
+  const notify = (): void => {
+    panel.webview.postMessage({ type: 'refresh' })
+  }
+
+  watcher.onDidChange(notify)
+  watcher.onDidCreate(notify)
+  watcher.onDidDelete(notify)
 
   panel.onDidDispose(() => {
     currentPanel = undefined
+    watcher.dispose()
   })
 }
 
-function activate(context) {
+export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('ccm.open', () => {
       if (currentPanel) {
@@ -67,37 +81,35 @@ function activate(context) {
           enableScripts: true,
           retainContextWhenHidden: true,
           localResourceRoots: [
-            vscode.Uri.joinPath(context.extensionUri, 'webview')
-          ]
-        }
+            vscode.Uri.joinPath(context.extensionUri, 'webview'),
+          ],
+        },
       )
 
       setupPanel(panel, context)
-    })
+    }),
   )
 
-  // Restore panel on reload
   vscode.window.registerWebviewPanelSerializer('ccm', {
-    async deserializeWebviewPanel(panel, state) {
+    async deserializeWebviewPanel(panel: vscode.WebviewPanel): Promise<void> {
       panel.webview.options = {
         enableScripts: true,
-        retainContextWhenHidden: true,
         localResourceRoots: [
-          vscode.Uri.joinPath(context.extensionUri, 'webview')
-        ]
+          vscode.Uri.joinPath(context.extensionUri, 'webview'),
+        ],
       }
       setupPanel(panel, context)
-    }
+    },
   })
 }
 
-function getWebviewContent(webview, extensionUri) {
+function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): string {
   const webviewDir = vscode.Uri.joinPath(extensionUri, 'webview')
   const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(webviewDir, 'assets', 'index.js')
+    vscode.Uri.joinPath(webviewDir, 'assets', 'index.js'),
   )
   const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(webviewDir, 'assets', 'index.css')
+    vscode.Uri.joinPath(webviewDir, 'assets', 'index.css'),
   )
 
   const nonce = getNonce()
@@ -118,7 +130,7 @@ function getWebviewContent(webview, extensionUri) {
 </html>`
 }
 
-function getNonce() {
+function getNonce(): string {
   let text = ''
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   for (let i = 0; i < 32; i++) {
@@ -127,6 +139,4 @@ function getNonce() {
   return text
 }
 
-function deactivate() {}
-
-module.exports = { activate, deactivate }
+export function deactivate(): void {}

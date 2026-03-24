@@ -1,16 +1,19 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
+import type { NodeProps } from '@xyflow/react'
 import { format } from 'date-fns'
-import theme, { glassBlur } from '../lib/theme.js'
+import theme, { glassBlur } from '../lib/theme'
+import type { ConversationNodeData } from '../lib/buildTree'
 
-function formatSize(bytes) {
+function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes}B`
   if (bytes < 1048576) return `${Math.round(bytes / 1024)}K`
   return `${(bytes / 1048576).toFixed(1)}M`
 }
 
-function ConversationBarNode({ data, selected }) {
-  const { title, firstTimestamp, lastTimestamp, messageCount, fileSize, isFork, barWidth } = data
+function ConversationBarNode({ data, selected }: NodeProps) {
+  const nodeData = data as unknown as ConversationNodeData
+  const { title, firstTimestamp, lastTimestamp, messageCount, fileSize, isFork, barWidth } = nodeData
 
   const startStr = firstTimestamp
     ? format(new Date(firstTimestamp), 'MMM d HH:mm')

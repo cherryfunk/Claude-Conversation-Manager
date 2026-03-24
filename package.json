@@ -4,8 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "node server/index.js",
-    "client": "cd client && npm run dev"
+    "server": "cd server && npm run build && npm run start",
+    "client": "cd client && npm run dev",
+    "build": "cd shared && npm run build && cd ../server && npm run build && cd ../extension && npm run build && cd ../client && npm run build",
+    "build:shared": "cd shared && npm run build",
+    "build:extension": "cd shared && npm run build && cd ../extension && npm run build",
+    "build:server": "cd shared && npm run build && cd ../server && npm run build",
+    "typecheck": "cd shared && npx tsc --noEmit && cd ../extension && npx tsc --noEmit && cd ../server && npx tsc --noEmit && cd ../client && npx tsc --noEmit"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

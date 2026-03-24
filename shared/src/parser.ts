@@ -1,8 +1,16 @@
-const { readdir, stat } = require('fs/promises')
-const { join, basename } = require('path')
-const { createReadStream } = require('fs')
-const { createInterface } = require('readline')
-const { homedir } = require('os')
+import { readdir, stat } from 'fs/promises'
+import { join, basename } from 'path'
+import { createReadStream } from 'fs'
+import { createInterface } from 'readline'
+import { homedir } from 'os'
+import type {
+  Project,
+  Conversation,
+  ForkInfo,
+  ContentBlock,
+  ConversationMessage,
+  ConversationDetail,
+} from './types'
 
 const CLAUDE_DIR = join(homedir(), '.claude')
 const PROJECTS_DIR = join(CLAUDE_DIR, 'projects')
@@ -10,12 +18,45 @@ const HISTORY_FILE = join(CLAUDE_DIR, 'history.jsonl')
 
 const TREE_TYPES = new Set(['user', 'assistant', 'system'])
 
-function decodeProjectDir(dirName) {
+interface HistoryEntry {
+  sessionId?: string
+  project?: string
+}
+
+interface RawJsonlEntry {
+  uuid?: string
+  parentUuid?: string
+  type?: string
+  timestamp?: string
+  message?: RawMessage
+  content?: unknown
+  customTitle?: string
+  forkedFrom?: { sessionId: string; messageUuid: string }
+  isSidechain?: boolean
+}
+
+interface RawMessage {
+  content?: string | RawContentBlock[]
+  model?: string
+  stop_reason?: string
+}
+
+interface RawContentBlock {
+  type: string
+  text?: string
+  name?: string
+  input?: unknown
+  content?: string | Array<{ type: string; text?: string }>
+  tool_use_id?: string
+  thinking?: string
+}
+
+function decodeProjectDir(dirName: string): string {
   return dirName.replace(/^-/, '/').replace(/-/g, '/')
 }
 
-async function buildProjectMap() {
-  const map = new Map()
+async function buildProjectMap(): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
   try {
     const rl = createInterface({
       input: createReadStream(HISTORY_FILE),
@@ -23,45 +64,64 @@ async function buildProjectMap() {
     })
     for await (const line of rl) {
       try {
-        const obj = JSON.parse(line)
+        const obj = JSON.parse(line) as HistoryEntry
         if (obj.sessionId && obj.project) {
           map.set(obj.sessionId, obj.project)
         }
-      } catch {}
+      } catch {
+        // skip malformed lines
+      }
     }
-  } catch {}
+  } catch {
+    // history file may not exist
+  }
   return map
 }
 
-async function listProjects() {
-  const projectMap = await buildProjectMap()
-  const entries = await readdir(PROJECTS_DIR, { withFileTypes: true })
-  const projects = []
+function filterConvFiles(files: string[]): string[] {
+  return files.filter(
+    (f) => f.endsWith('.jsonl') && !f.includes('subagent')
+  )
+}
 
+export async function listProjects(): Promise<Project[]> {
+  const projectMap = await buildProjectMap()
+  const dirPathMap = new Map<string, string>()
+  const entries = await readdir(PROJECTS_DIR, { withFileTypes: true })
+  const projects: Project[] = []
+
+  // First pass: find readable paths for each directory from history
   for (const entry of entries) {
     if (!entry.isDirectory()) continue
     const dirPath = join(PROJECTS_DIR, entry.name)
     const files = await readdir(dirPath)
-    const convFiles = files.filter(
-      (f) => f.endsWith('.jsonl') && !f.includes('subagent')
-    )
-
-    let readablePath = null
+    const convFiles = filterConvFiles(files)
     for (const file of convFiles) {
       const sessionId = basename(file, '.jsonl')
       if (projectMap.has(sessionId)) {
-        readablePath = projectMap.get(sessionId)
-        break
+        const historyPath = projectMap.get(sessionId)!
+        const encodedHistoryPath = historyPath.replace(/[\/ ]/g, '-')
+        if (encodedHistoryPath === entry.name) {
+          dirPathMap.set(entry.name, historyPath)
+          break
+        }
       }
     }
+  }
 
-    const shortName = readablePath
-      ? readablePath.replace(homedir(), '~')
-      : entry.name.replace(/^-Users-[^-]+-Repos-/, '').replace(/-/g, ' ')
+  // Second pass: build project list
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
+    const dirPath = join(PROJECTS_DIR, entry.name)
+    const files = await readdir(dirPath)
+    const convFiles = filterConvFiles(files)
+
+    const readablePath = dirPathMap.get(entry.name) ?? decodeProjectDir(entry.name)
+    const shortName = readablePath.replace(homedir(), '~')
 
     projects.push({
       id: entry.name,
-      path: readablePath || decodeProjectDir(entry.name),
+      path: readablePath,
       name: shortName,
       conversationCount: convFiles.length,
     })
@@ -70,26 +130,24 @@ async function listProjects() {
   return projects.sort((a, b) => a.name.localeCompare(b.name))
 }
 
-async function listConversations(projectDirName) {
+export async function listConversations(projectDirName: string): Promise<Conversation[]> {
   const dirPath = join(PROJECTS_DIR, projectDirName)
   const files = await readdir(dirPath)
-  const convFiles = files.filter(
-    (f) => f.endsWith('.jsonl') && !f.includes('subagent')
-  )
+  const convFiles = filterConvFiles(files)
 
-  const conversations = []
+  const conversations: Conversation[] = []
 
   for (const file of convFiles) {
     const filePath = join(dirPath, file)
     const sessionId = basename(file, '.jsonl')
     const fileStat = await stat(filePath)
 
-    let title = null
-    let firstUserMsg = null
-    let firstTimestamp = null
-    let lastTimestamp = null
+    let title: string | null = null
+    let firstUserMsg: string | null = null
+    let firstTimestamp: string | null = null
+    let lastTimestamp: string | null = null
     let messageCount = 0
-    let forkedFrom = null
+    let forkedFrom: ForkInfo | null = null
 
     const rl = createInterface({
       input: createReadStream(filePath),
@@ -98,12 +156,11 @@ async function listConversations(projectDirName) {
 
     for await (const line of rl) {
       try {
-        const obj = JSON.parse(line)
+        const obj = JSON.parse(line) as RawJsonlEntry
         messageCount++
 
         if (obj.timestamp) {
           const ts = obj.timestamp
-          // For forked conversations, only count non-inherited messages
           if (!firstTimestamp && !obj.forkedFrom) firstTimestamp = ts
           lastTimestamp = ts
         }
@@ -122,8 +179,7 @@ async function listConversations(projectDirName) {
         if (
           !firstUserMsg &&
           obj.type === 'user' &&
-          obj.message &&
-          obj.message.content
+          obj.message?.content
         ) {
           const content = obj.message.content
           if (Array.isArray(content)) {
@@ -138,12 +194,14 @@ async function listConversations(projectDirName) {
             }
           }
         }
-      } catch {}
+      } catch {
+        // skip malformed lines
+      }
     }
 
     conversations.push({
       sessionId,
-      title: title || firstUserMsg || '(untitled)',
+      title: title ?? firstUserMsg ?? '(untitled)',
       firstTimestamp,
       lastTimestamp,
       messageCount,
@@ -153,25 +211,25 @@ async function listConversations(projectDirName) {
   }
 
   // Resolve fork parent titles
-  const titleMap = new Map()
+  const titleMap = new Map<string, string>()
   for (const c of conversations) {
     titleMap.set(c.sessionId, c.title)
   }
   for (const c of conversations) {
     if (c.forkedFrom) {
-      c.forkedFrom.title = titleMap.get(c.forkedFrom.sessionId) || c.forkedFrom.sessionId
+      c.forkedFrom.title = titleMap.get(c.forkedFrom.sessionId) ?? c.forkedFrom.sessionId
     }
   }
 
   return conversations.sort(
     (a, b) =>
-      new Date(b.lastTimestamp || 0).getTime() -
-      new Date(a.lastTimestamp || 0).getTime()
+      new Date(b.lastTimestamp ?? 0).getTime() -
+      new Date(a.lastTimestamp ?? 0).getTime()
   )
 }
 
-function extractContentPreview(msg) {
-  if (!msg || !msg.content) return ''
+function extractContentPreview(msg: RawMessage): string {
+  if (!msg?.content) return ''
   const content = msg.content
   if (typeof content === 'string') return content.slice(0, 150)
   if (Array.isArray(content)) {
@@ -187,15 +245,15 @@ function extractContentPreview(msg) {
   return ''
 }
 
-function extractContent(msg) {
-  if (!msg || !msg.content) return []
+function extractContent(msg: RawMessage): ContentBlock[] {
+  if (!msg?.content) return []
   if (typeof msg.content === 'string') {
     return [{ type: 'text', text: msg.content }]
   }
   if (Array.isArray(msg.content)) {
-    return msg.content.map((block) => {
+    return msg.content.map((block): ContentBlock => {
       if (block.type === 'text') {
-        return { type: 'text', text: block.text || '' }
+        return { type: 'text', text: block.text ?? '' }
       }
       if (block.type === 'tool_use') {
         return {
@@ -211,7 +269,7 @@ function extractContent(msg) {
         } else if (Array.isArray(block.content)) {
           resultText = block.content
             .filter((c) => c.type === 'text')
-            .map((c) => c.text)
+            .map((c) => c.text ?? '')
             .join('\n')
         }
         return {
@@ -221,7 +279,7 @@ function extractContent(msg) {
         }
       }
       if (block.type === 'thinking') {
-        return { type: 'thinking', text: (block.thinking || '').slice(0, 2000) }
+        return { type: 'thinking', text: (block.thinking ?? '').slice(0, 2000) }
       }
       return { type: block.type || 'unknown' }
     })
@@ -229,35 +287,38 @@ function extractContent(msg) {
   return []
 }
 
-async function getConversation(projectDirName, sessionId) {
+export async function getConversation(
+  projectDirName: string,
+  sessionId: string,
+): Promise<ConversationDetail> {
   const filePath = join(PROJECTS_DIR, projectDirName, `${sessionId}.jsonl`)
   const rl = createInterface({
     input: createReadStream(filePath),
     crlfDelay: Infinity,
   })
 
-  const messages = []
-  let title = null
-  const allNodes = new Map()
+  const messages: ConversationMessage[] = []
+  let title: string | null = null
+  const allNodes = new Map<string, ConversationMessage>()
 
   for await (const line of rl) {
     try {
-      const obj = JSON.parse(line)
+      const obj = JSON.parse(line) as RawJsonlEntry
 
       if (obj.type === 'custom-title' && obj.customTitle) {
         title = obj.customTitle
         continue
       }
 
-      if (!TREE_TYPES.has(obj.type)) continue
+      if (!obj.type || !TREE_TYPES.has(obj.type)) continue
       if (!obj.uuid) continue
 
-      const node = {
+      const node: ConversationMessage = {
         uuid: obj.uuid,
-        parentUuid: obj.parentUuid || null,
-        type: obj.type,
-        timestamp: obj.timestamp,
-        isSidechain: obj.isSidechain || false,
+        parentUuid: obj.parentUuid ?? null,
+        type: obj.type as 'user' | 'assistant' | 'system',
+        timestamp: obj.timestamp ?? '',
+        isSidechain: obj.isSidechain ?? false,
         contentPreview: '',
         content: [],
         model: null,
@@ -270,8 +331,8 @@ async function getConversation(projectDirName, sessionId) {
       } else if (obj.type === 'assistant' && obj.message) {
         node.contentPreview = extractContentPreview(obj.message)
         node.content = extractContent(obj.message)
-        node.model = obj.message.model || null
-        node.stopReason = obj.message.stop_reason || null
+        node.model = obj.message.model ?? null
+        node.stopReason = obj.message.stop_reason ?? null
       } else if (obj.type === 'system') {
         const text =
           typeof obj.content === 'string' ? obj.content : JSON.stringify(obj.content)
@@ -281,9 +342,12 @@ async function getConversation(projectDirName, sessionId) {
 
       allNodes.set(obj.uuid, node)
       messages.push(node)
-    } catch {}
+    } catch {
+      // skip malformed lines
+    }
   }
 
+  // Reparent: if a node's parentUuid points to a filtered-out node, make it a root
   for (const msg of messages) {
     if (msg.parentUuid && !allNodes.has(msg.parentUuid)) {
       msg.parentUuid = null
@@ -292,9 +356,7 @@ async function getConversation(projectDirName, sessionId) {
 
   return {
     sessionId,
-    title: title || messages.find((m) => m.type === 'user')?.contentPreview || '(untitled)',
+    title: title ?? messages.find((m) => m.type === 'user')?.contentPreview ?? '(untitled)',
     messages,
   }
 }
-
-module.exports = { listProjects, listConversations, getConversation }
