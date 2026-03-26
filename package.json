@@ -10,7 +10,9 @@
     "build:shared": "cd shared && npm run build",
     "build:extension": "cd shared && npm run build && cd ../extension && npm run build",
     "build:server": "cd shared && npm run build && cd ../server && npm run build",
-    "typecheck": "cd shared && npx tsc --noEmit && cd ../extension && npx tsc --noEmit && cd ../server && npx tsc --noEmit && cd ../client && npx tsc --noEmit"
+    "typecheck": "cd shared && npx tsc --noEmit && cd ../extension && npx tsc --noEmit && cd ../server && npx tsc --noEmit && cd ../client && npx tsc --noEmit",
+    "install-service": "cp com.cherryfunk.ccm.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/com.cherryfunk.ccm.plist && echo 'CCM service installed and started'",
+    "uninstall-service": "launchctl unload ~/Library/LaunchAgents/com.cherryfunk.ccm.plist && rm ~/Library/LaunchAgents/com.cherryfunk.ccm.plist && echo 'CCM service removed'"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

@@ -15,7 +15,7 @@ import type { Conversation } from '@ccm/shared'
 
 const nodeTypes = { conversationBar: ConversationNode }
 
-type MinimapMode = 'always' | 'hover' | 'hidden'
+type MinimapMode = 'always' | 'hidden'
 
 // Hide: map with X
 function IconHide() {
@@ -23,16 +23,6 @@ function IconHide() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
       <line x1="4" y1="4" x2="20" y2="20" strokeWidth="2.5" />
-    </svg>
-  )
-}
-
-// On scroll: map with eye
-function IconOnScroll() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
     </svg>
   )
 }
@@ -50,13 +40,11 @@ function IconShow() {
 
 const modeIcons: Record<MinimapMode, () => React.ReactElement> = {
   hidden: IconHide,
-  hover: IconOnScroll,
   always: IconShow,
 }
 
 const modeTooltips: Record<MinimapMode, string> = {
   hidden: 'Hide',
-  hover: 'Show on scroll',
   always: 'Show always',
 }
 
@@ -122,13 +110,13 @@ export default function ConversationTree({
     )
   }
 
-  const allModes: MinimapMode[] = ['hidden', 'hover', 'always']
+  const allModes: MinimapMode[] = ['hidden', 'always']
   const ActiveIcon = modeIcons[minimapMode]
 
   return (
     <div
       style={{ position: 'absolute', inset: 0, '--controls-left': `${sidebarWidth + 12}px` } as React.CSSProperties}
-      className={minimapMode === 'hover' ? 'minimap-hover' : undefined}
+      className={undefined}
     >
       <ReactFlow
         nodes={nodes}

@@ -1,14 +1,25 @@
 import express, { type Request, type Response } from 'express'
 import cors from 'cors'
 import { watch, type FSWatcher } from 'fs'
-import { join } from 'path'
+import { join, dirname } from 'path'
 import { homedir } from 'os'
+import { fileURLToPath } from 'url'
 import { listProjects, listConversations, getConversation } from '@ccm/shared'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const CLIENT_DIST = join(__dirname, '../../extension/webview')
 
 const app = express()
 const PORT = 3001
 
 app.use(cors())
+
+// Serve the built React client as a PWA
+app.use(express.static(CLIENT_DIST))
+// SPA fallback — all non-API routes serve index.html
+app.get(/^(?!\/api).*$/, (_req, res) => {
+  res.sendFile(join(CLIENT_DIST, 'index.html'))
+})
 
 app.get('/api/projects', async (_req: Request, res: Response) => {
   try {
